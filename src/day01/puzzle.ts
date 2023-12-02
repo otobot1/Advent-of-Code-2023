@@ -2,6 +2,7 @@ import fs from "fs";
 
 
 
+const DAY_NUM_STRING = "01";    // must be 2 digits
 
 const USE_TEST_INPUT: boolean = false;
 
@@ -16,7 +17,7 @@ export const main = () => {
 
 
 const puzzle1 = () => {
-    const inputPath = `./src/day01/${USE_TEST_INPUT ? "test-input.txt" : "input.txt"}`;
+    const inputPath = `./src/day${DAY_NUM_STRING}/${USE_TEST_INPUT ? "test-input.txt" : "input.txt"}`;
     if (!inputPath) throw "Invalid inputPath";
 
 
