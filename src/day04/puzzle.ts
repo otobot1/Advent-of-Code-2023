@@ -1,4 +1,5 @@
 import fs from "fs";
+import { isEmptyString, getNumberFromString } from "~/utils/utils";
 
 
 
@@ -142,22 +143,6 @@ const parseGame = <
 
 
     return undefined as ReturnType;
-};
-
-
-const isEmptyString = (string: string): boolean => {
-    if (string === "") return true;
-
-    return false;
-};
-
-
-const getNumberFromString = (numString: string): number => {
-    const num = Number(numString);
-
-    if (isNaN(num)) throw `numString "${numString}" is NaN`;
-
-    return num;
 };
 
 
