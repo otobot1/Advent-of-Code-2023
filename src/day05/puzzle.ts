@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import { getNumberArrayFromString } from "../utils/utils.js";
+import { getNumberArrayFromString, printProgress } from "../utils/utils.js";
 
 
 
@@ -170,7 +170,7 @@ const getLocationNumbers = (seedNumbers: number[], mapArray: Map[]): number[] =>
 
 const applyMap = (oldNumbers: number[], currentMap: Map): number[] => {
     const newNumbers = oldNumbers.map(
-        (oldNum) => getNewNum(oldNum, currentMap)
+        (oldNum) => getNewNum(oldNum, currentMap, false)
     );
 
 
@@ -178,7 +178,7 @@ const applyMap = (oldNumbers: number[], currentMap: Map): number[] => {
 };
 
 
-const getNewNum = (oldNumber: number, currentMap: Map): number => {
+const getNewNum = (oldNumber: number, currentMap: Map, isDirectionReversed: boolean): number => {
     let newNumber = oldNumber;
 
     currentMap.forEach(
@@ -186,12 +186,16 @@ const getNewNum = (oldNumber: number, currentMap: Map): number => {
             const [destinationRangeStart, sourceRangeStart, rangeLength] = currentMapEntry;
 
 
-            if (oldNumber >= sourceRangeStart && oldNumber < sourceRangeStart + rangeLength) {
+            const mappedDestinationRangeStart = isDirectionReversed ? sourceRangeStart : destinationRangeStart;
+            const mappedSourceRangeStart = isDirectionReversed ? destinationRangeStart : sourceRangeStart;
+
+
+            if (oldNumber >= mappedSourceRangeStart && oldNumber < mappedSourceRangeStart + rangeLength) {
                 if (oldNumber !== newNumber) throw "attempted to apply a second mapEntry to newNumber";
 
-                const offset = oldNumber - sourceRangeStart;
+                const offset = oldNumber - mappedSourceRangeStart;
 
-                newNumber = destinationRangeStart + offset;
+                newNumber = mappedDestinationRangeStart + offset;
             }
         }
     );
@@ -204,28 +208,30 @@ const getNewNum = (oldNumber: number, currentMap: Map): number => {
 
 
 const getLowestLocation = (seedNumbers: number[], mapArray: Map[]): number => {
-    let lowestLocation = Infinity;
+    const startTime = performance.now();
 
-    for (let outerIndex = 0; outerIndex < seedNumbers.length; outerIndex += 2) {
-        const iteration = outerIndex / 2 + 1;
-        console.log(`beginning iteration ${iteration}`);
+    
+    const reversedMapArray = mapArray.toReversed();
+    const limit = 20000000000;
 
-
-        const seedRangeStart = seedNumbers[outerIndex];
-        const seedRangeLength = seedNumbers[outerIndex + 1];
-
-
-        for (let currentSeedNumber = seedRangeStart; currentSeedNumber < seedRangeStart + seedRangeLength; currentSeedNumber++) {
-            const currentLocation = mapArray.reduce(
-                (oldNumber, currentMap) => getNewNum(oldNumber, currentMap),
-                currentSeedNumber,
-            );
+    for (let currentLocationNumber = 1; currentLocationNumber < limit; currentLocationNumber++) {
+        const currentSeedNumber = reversedMapArray.reduce(
+            (oldNumber, currentMap, _i) => getNewNum(oldNumber, currentMap, true),
+            currentLocationNumber,
+        );
 
 
-            if (currentLocation < lowestLocation) lowestLocation = currentLocation;
+        for (let index = 0; index < seedNumbers.length; index += 2) {
+            const seedRangeStart = seedNumbers[index];
+            const seedRangeLength = seedNumbers[index + 1];
+
+            if (currentSeedNumber >= seedRangeStart && currentSeedNumber < seedRangeStart + seedRangeLength) return currentLocationNumber;
         }
+
+
+        if (currentLocationNumber % 1000000 === 0) printProgress(currentLocationNumber,limit, startTime);
     }
 
 
-    return lowestLocation;
+    throw "no valid locations found";
 };
